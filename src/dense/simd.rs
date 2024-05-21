@@ -363,8 +363,9 @@ pub fn rqsqrt_approx_intrin_avx_32(r2: __m256) -> __m256 {
 /// Single precision rsqrt
 #[inline(always)]
 pub fn rqsqrt_approx_intrin_sse_32(r2: __m128) -> __m128 {
-    let zero = f32x4(0., 0., 0., 0.);
-    unsafe { _mm_andnot_ps(_mm_cmpeq_ps(r2, pulp::cast(zero)), _mm_rsqrt_ps(r2)) }
+    // let zero = f32x4(0., 0., 0., 0.);
+    // unsafe { _mm_andnot_ps(_mm_cmpeq_ps(r2, pulp::cast(zero)), _mm_rsqrt_ps(r2)) }
+    unsafe { _mm_andnot_ps(r2, _mm_rsqrt_ps(r2)) }
 }
 
 /// Always apply single precision rsqrt instruction
@@ -372,6 +373,7 @@ pub fn rqsqrt_approx_intrin_sse_32(r2: __m128) -> __m128 {
 pub fn rqsqrt_approx_intrin_avx_64(r2: __m256d) -> __m256d {
     unsafe { _mm256_cvtps_pd(rqsqrt_approx_intrin_sse_32(_mm256_cvtpd_ps(r2))) }
 }
+
 
 #[inline(always)]
 pub fn rsqrt_newton_intrin_32(rinv: __m256, r2: __m256, newton_constant: f32) -> __m256 {
@@ -1021,6 +1023,12 @@ impl RlstSimd for f64 {
         #[cfg(all(target_arch = "x86_64"))]
         {
             use coe::coerce_static as to;
+            #[cfg(feature = "nightly")]
+            if coe::is_same::<S, pulp::x86::V4>() {
+                let simd: pulp::x86::V4 = to(simd);
+                return to(simd.avx512f._mm512_rcp14_pd(to(value)));
+            }
+
 
             if coe::is_same::<S, pulp::x86::V3>() {
                 let value: pulp::f64x4 = to(value);
