@@ -2,7 +2,7 @@
 
 use bytemuck::Pod;
 use num::Zero;
-use pulp::Simd;
+use pulp::{f64x4, Simd};
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::slice::{from_raw_parts, from_raw_parts_mut};
@@ -348,13 +348,15 @@ use std::arch::x86_64::{
     _CMP_EQ_OS,
 };
 
+const ZERO: f32x8 = f32x8(0., 0., 0., 0., 0., 0., 0., 0.);
+
 /// Single precision rsqrt
 #[inline(always)]
 pub fn rqsqrt_approx_intrin_avx_32(r2: __m256) -> __m256 {
-    let zero = f32x8(0., 0., 0., 0., 0., 0., 0., 0.);
+    // let zero = f32x8(0., 0., 0., 0., 0., 0., 0., 0.);
     unsafe {
         _mm256_andnot_ps(
-            _mm256_cmp_ps(r2, pulp::cast(zero), _CMP_EQ_OS),
+            _mm256_cmp_ps(r2, pulp::cast(ZERO), _CMP_EQ_OS),
             _mm256_rsqrt_ps(r2),
         )
     }
@@ -363,9 +365,8 @@ pub fn rqsqrt_approx_intrin_avx_32(r2: __m256) -> __m256 {
 /// Single precision rsqrt
 #[inline(always)]
 pub fn rqsqrt_approx_intrin_sse_32(r2: __m128) -> __m128 {
-    // let zero = f32x4(0., 0., 0., 0.);
-    // unsafe { _mm_andnot_ps(_mm_cmpeq_ps(r2, pulp::cast(zero)), _mm_rsqrt_ps(r2)) }
-    unsafe { _mm_andnot_ps(r2, _mm_rsqrt_ps(r2)) }
+    let zero = f32x4(0., 0., 0., 0.);
+    unsafe { _mm_andnot_ps(_mm_cmpeq_ps(r2, pulp::cast(zero)), _mm_rsqrt_ps(r2)) }
 }
 
 /// Always apply single precision rsqrt instruction
@@ -397,17 +398,13 @@ pub fn rsqrt_newton_intrin_64(rinv: __m256d, r2: __m256d, newton_constant: __m25
     // defer scaling by 0.5
 
     unsafe {
-        // _mm256_mul_pd(
-        //     rinv,
-        //     _mm256_sub_pd(
-        //         newton_constant,
-        //         _mm256_mul_pd(r2, _mm256_mul_pd(rinv, rinv)),
-        //     ),
-        // )_
-        let rinv2 = _mm256_mul_pd(rinv, rinv);  // rinv^2
-        let term = _mm256_mul_pd(r2, rinv2);    // r2 * rinv^2
-        let sub_result = _mm256_sub_pd(newton_constant, term); // newton_constant - term
-        _mm256_mul_pd(rinv, sub_result)  // rinv * (newton_constant - term)
+        _mm256_mul_pd(
+            rinv,
+            _mm256_sub_pd(
+                newton_constant,
+                _mm256_mul_pd(r2, _mm256_mul_pd(rinv, rinv)),
+            ),
+        )
     }
 }
 
@@ -1029,11 +1026,14 @@ impl RlstSimd for f64 {
                 return to(simd.avx512f._mm512_rcp14_pd(to(value)));
             }
 
-
             if coe::is_same::<S, pulp::x86::V3>() {
                 let value: pulp::f64x4 = to(value);
-                let res: pulp::f64x4 = pulp::cast(rsqrt_double_intrin_64(pulp::cast(value)));
+                // let simd: pulp::x86::V3 = to(simd);
+                // let scale = simd.splat_f64x4(1./2.);
+                let res: pulp::f64x4 = pulp::cast(rsqrt_single_intrin_64(pulp::cast(value)));
+                // let res: pulp::f64x4 = simd.mul_f64x4(pulp::cast(rsqrt_single_intrin_64(pulp::cast(value))), scale);
                 return to(res);
+                // return to(value);
             }
         }
 
