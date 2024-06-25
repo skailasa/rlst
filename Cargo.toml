@@ -48,8 +48,8 @@ blas-src = { version = "0.9", features = ["accelerate"]}
 lapack-src = { version = "0.9", features = ["accelerate"]}
 
 [target.x86_64-unknown-linux-gnu.dev-dependencies]
-blas-src = { version = "0.9", features = ["blis"]}
-lapack-src = { version = "0.9", features = ["netlib"]}
+blas-src = { version = "0.9", features = ["openblas"]}
+lapack-src = { version = "0.9", features = ["openblas"]}
 
 
 [dev-dependencies]
