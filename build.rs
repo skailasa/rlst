@@ -269,9 +269,9 @@ fn main() {
         build_umfpack(out_dir.clone());
     }
 
-    if std::env::var("CARGO_FEATURE_SLEEF").is_ok() {
-        build_sleef()
-    }
+    // if std::env::var("CARGO_FEATURE_SLEEF").is_ok() {
+    //     build_sleef()
+    // }
 
     println!("cargo:rerun-if-changed=metal/rlst_metal.m");
     println!("cargo:rerun-if-changed=sleef_interface/sleef_avx.c");
