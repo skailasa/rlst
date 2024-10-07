@@ -34,6 +34,7 @@ fn build_sleef() {
     .expect("Failed to set HEAD");
 
     Config::new(sleef_dir.clone())
+        .define("CMAKE_EXE_LINKER_FLAGS", "-lm")
         .define("CMAKE_PREFIX_PATH", out_dir.clone())
         .profile("Release")
         .build();
@@ -54,6 +55,7 @@ fn build_sleef() {
             .compile("sleef_interface");
     }
 
+    println!("cargo:rustc-link-lib=m");
     println!("cargo:rustc-link-lib=static=sleef");
     println!("cargo:rustc-link-lib=static=sleef_interface");
 }
