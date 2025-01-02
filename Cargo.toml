@@ -16,7 +16,7 @@ exclude = ["suitesparse-src", "netlib-lapack-src", "blis-src"]
 name = "rlst"
 
 [dependencies]
-rlst-proc-macro = { path = "proc-macro", version = "0.2" }
+rlst-proc-macro = { path = "proc-macro", git="https://github.com/skailasa/green-kernels.git", default-features = false, features = [] }
 num = { version = "0.4", features = ["serde", "rand"] }
 rand = "0.8"
 rand_chacha = "0.3"
